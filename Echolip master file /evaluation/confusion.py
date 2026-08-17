@@ -35,8 +35,10 @@ def plot_confusion_matrix(cm, classes,
 
 arpabet = nltk.corpus.cmudict.dict()
 
+DIGIT_TRANS = str.maketrans('', '', string.digits)
+
 def get_phonemes(word):
-    return [str(phoneme).translate(None, string.digits) for phoneme in arpabet[word][0]]
+    return [str(phoneme).translate(DIGIT_TRANS) for phoneme in arpabet[word][0]]
 
 with open('phonemes.txt') as f:
     labels = f.read().splitlines()
@@ -145,7 +147,7 @@ for k in range(0, len(SCENARIOS)):
 
     # plt.show()
     savepath = os.path.join('confusions', _name + '.png')
-    print savepath
+    print(savepath)
     plt.savefig(savepath, bbox_inches='tight')
 
 
@@ -160,5 +162,5 @@ plot_confusion_matrix(confusion_matrix, classes=viseme_labels, normalize=True,
 
 # plt.show()
 savepath = os.path.join('confusions', viseme_name + '.png')
-print savepath
+print(savepath)
 plt.savefig(savepath, bbox_inches='tight')

@@ -4,8 +4,8 @@ from lipnet.core.decoders import Decoder
 from lipnet.lipreading.helpers import labels_to_text
 from lipnet.utils.spell import Spell
 from lipnet.model2 import LipNet
-from keras.optimizers import Adam
-from keras import backend as K
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras import backend as K
 import numpy as np
 import sys
 import os
@@ -36,7 +36,7 @@ def predict(weight_path, video):
         lipnet = LipNet(img_c=3, img_w=100, img_h=50, frames_n=75,
                         absolute_max_string_len=32, output_size=28)
 
-        adam = Adam(lr=0.0001, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
+        adam = Adam(learning_rate=0.0001, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
 
         lipnet.model.compile(loss={'ctc': lambda y_true, y_pred: y_pred}, optimizer=adam)
         lipnet.model.load_weights(weight_path)
@@ -52,24 +52,24 @@ def predict(weight_path, video):
     result         = decoder.decode(y_pred, input_length)[0]
 
     show_video_subtitle(video.face, result)
-    print result
+    print(result)
 
 def predicts(weight_path, videos_path, absolute_max_string_len=32, output_size=28):
     videos = []
     for video_path in glob.glob(os.path.join(videos_path, '*')):
         videos.append(load(video_path))
-    raw_input("Press Enter to continue...")
+    input("Press Enter to continue...")
     for video in videos:
         predict(weight_path, video)
 
 def load(video_path):
-    print "\n[{}]\nLoading data from disk...".format(video_path)
+    print("\n[{}]\nLoading data from disk...".format(video_path))
     video = Video(vtype='face', face_predictor_path=FACE_PREDICTOR_PATH)
     if os.path.isfile(video_path):
         video.from_video(video_path)
     else:
         video.from_frames(video_path)
-    print "Data loaded.\n"
+    print("Data loaded.\n")
     return video
 
 if __name__ == '__main__':

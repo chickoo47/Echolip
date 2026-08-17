@@ -1,13 +1,13 @@
-from keras.layers.convolutional import Conv3D, ZeroPadding3D
-from keras.layers.pooling import MaxPooling3D
-from keras.layers.core import Dense, Activation, SpatialDropout3D, Flatten
-from keras.layers.wrappers import Bidirectional, TimeDistributed
-from keras.layers.recurrent import GRU
-from keras.layers.normalization import BatchNormalization
-from keras.layers import Input
-from keras.models import Model
+from tensorflow.keras.layers import Conv3D, ZeroPadding3D
+from tensorflow.keras.layers import MaxPooling3D
+from tensorflow.keras.layers import Dense, Activation, SpatialDropout3D, Flatten
+from tensorflow.keras.layers import Bidirectional, TimeDistributed
+from tensorflow.keras.layers import GRU
+from tensorflow.keras.layers import BatchNormalization
+from tensorflow.keras.layers import Input
+from tensorflow.keras.models import Model
 from lipnet.core.layers import CTC
-from keras import backend as K
+from tensorflow.keras import backend as K
 
 
 class LipNet(object):
@@ -51,8 +51,11 @@ class LipNet(object):
 
         self.resh1 = TimeDistributed(Flatten())(self.maxp3)
 
-        self.gru_1 = Bidirectional(GRU(256, return_sequences=True, kernel_initializer='Orthogonal', name='gru1'), merge_mode='concat')(self.resh1)
-        self.gru_2 = Bidirectional(GRU(256, return_sequences=True, kernel_initializer='Orthogonal', name='gru2'), merge_mode='concat')(self.gru_1)
+        # reset_after=False keeps the pre-TF2 GRU bias layout (a single (3*units,)
+        # bias vector) so weights saved by the original Keras 2.0.2 model still load;
+        # modern Keras defaults to reset_after=True, which uses a (2, 3*units) bias.
+        self.gru_1 = Bidirectional(GRU(256, return_sequences=True, reset_after=False, kernel_initializer='Orthogonal', name='gru1'), merge_mode='concat')(self.resh1)
+        self.gru_2 = Bidirectional(GRU(256, return_sequences=True, reset_after=False, kernel_initializer='Orthogonal', name='gru2'), merge_mode='concat')(self.gru_1)
 
         # transforms RNN output to character activations:
         self.dense1 = Dense(self.output_size, kernel_initializer='he_normal', name='dense1')(self.gru_2)
@@ -71,9 +74,13 @@ class LipNet(object):
         Model(inputs=self.input_data, outputs=self.y_pred).summary()
 
     def predict(self, input_batch):
-        return self.test_function([input_batch, 0])[0]  # the first 0 indicates test
+        # K.function()/K.learning_phase() (TF1 graph-mode APIs) no longer exist in
+        # Keras 3; call the inference sub-model directly in eager mode instead.
+        return self.test_function(input_batch, training=False).numpy()
 
     @property
     def test_function(self):
         # captures output of softmax so we can decode the output during visualization
-        return K.function([self.input_data, K.learning_phase()], [self.y_pred, K.learning_phase()])
+        if not hasattr(self, '_test_function'):
+            self._test_function = Model(inputs=self.input_data, outputs=self.y_pred)
+        return self._test_function

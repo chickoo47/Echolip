@@ -1,0 +1,30 @@
+# Modernized dependency set for the LipNet-based model in this repo.
+# The original setup.py pinned Keras 2.0.2 / TensorFlow-GPU 1.0.1 / Theano 0.9.0,
+# none of which install on current Python/OS toolchains. This file replaces the
+# standalone Keras + Theano/TF1 stack with modern TensorFlow (which now bundles
+# Keras) and current equivalents of the other dependencies.
+#
+# Install with: pip install -r requirements.txt
+
+tensorflow>=2.15,<2.17
+numpy>=1.23,<2.0
+scipy>=1.10
+h5py>=3.8
+matplotlib>=3.7
+Pillow>=9.4
+imageio>=2.31
+scikit-video>=1.1.11
+scikit-image>=0.20
+scikit-learn>=1.2
+# Plain `dlib` builds from source and, on Apple Silicon Macs with current Xcode,
+# fails compiling its bundled libpng (missing 'fp.h', an upstream dlib/libpng
+# bug). dlib-bin ships prebuilt wheels and is a drop-in `import dlib` fix.
+dlib-bin>=19.24
+nltk>=3.8
+editdistance>=0.6
+python-dateutil>=2.8
+
+# Only needed for evaluation/saliency.py. keras-vis is unmaintained and does not
+# support TensorFlow 2 / tf.keras, so this script will likely still need a
+# hand rewrite (e.g. against tf-keras-vis) before it will actually run.
+# keras-vis

@@ -1,11 +1,26 @@
 import os
 import numpy as np
-from keras import backend as K
-from scipy import ndimage
-from scipy.misc import imresize
+from tensorflow.keras import backend as K
+from PIL import Image
+import imageio.v3 as iio
+
+# scikit-video (unmaintained since ~2019) still uses the deprecated np.float
+# alias internally, which NumPy removed; restore it just enough for skvideo
+# to import and run.
+if not hasattr(np, 'float'):
+    np.float = float
+if not hasattr(np, 'int'):
+    np.int = int
+
 import skvideo.io
 import dlib
 from lipnet.lipreading.aligns import Align
+
+def imresize(arr, size):
+    # scipy.misc.imresize was removed from SciPy; replicate its
+    # (height, width) resize behaviour with Pillow instead.
+    height, width = size
+    return np.array(Image.fromarray(arr).resize((width, height)))
 
 class VideoAugmenter(object):
     @staticmethod
@@ -112,7 +127,7 @@ class Video(object):
 
     def from_frames(self, path):
         frames_path = sorted([os.path.join(path, x) for x in os.listdir(path)])
-        frames = [ndimage.imread(frame_path) for frame_path in frames_path]
+        frames = [iio.imread(frame_path) for frame_path in frames_path]
         self.handle_type(frames)
         return self
 
